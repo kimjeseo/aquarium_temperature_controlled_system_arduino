@@ -1,0 +1,129 @@
+// Include the libraries we need
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+LiquidCrystal_I2C lcd(0x27, 20, 4); //The LCD address and size. You can change according you yours
+
+// Data wire is plugged into port 2 on the Arduino
+#define ONE_WIRE_BUS 2 //pin for sensor
+
+// Setup a oneWire instance to communicate with any OneWire devices (not just Maxim/Dallas temperature ICs)
+OneWire oneWire(ONE_WIRE_BUS);
+
+// Pass our oneWire reference to Dallas Temperature.
+DallasTemperature sensors(&oneWire);
+
+/*
+   The setup function. We only start the sensors here
+*/
+
+const int fan = 3; 
+const int heater = 4; 
+double max_temperature = 31.667;
+double min_temperature = 26.67;
+
+void setup(void)
+{
+  // start serial port  
+  pinMode(3, OUTPUT);  
+  Serial.begin(9600);
+  Serial.println("Dallas Temperature IC Control Library Demo");
+
+  // Start up the library
+  sensors.begin();
+  lcd.init();
+  // Print a message to the LCD.
+  lcd.backlight();
+  lcd.setCursor(0, 0);
+  lcd.print("Aquarium");
+  lcd.setCursor(5, 1);
+  lcd.print("Temperature");
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Controlled");
+  lcd.setCursor(10, 1);
+  lcd.print("System");  
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print("Presented By:");  
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Kayecilyn D.");  
+  lcd.setCursor(7, 1);
+  lcd.print("Malabanan");  
+  delay(2000);
+  lcd.clear();  
+  lcd.setCursor(0, 0);
+  lcd.print("Final Project in");  
+  lcd.setCursor(0, 1);
+  lcd.print("Embedded Systems");
+  delay(2000);
+  lcd.clear();   
+  lcd.setCursor(5, 0);
+  lcd.print("Section:");
+  lcd.setCursor(5, 1);
+  lcd.print("TCPE 4-1");
+  delay(2000);
+  lcd.clear();   
+}
+
+/*
+   Main function, get and show the temperature
+*/
+void loop(void)
+{
+  // call sensors.requestTemperatures() to issue a global temperature
+  // request to all devices on the bus
+  Serial.print("Requesting temperatures...");
+  sensors.requestTemperatures(); // Send the command to get temperatures
+  Serial.println("DONE");
+  // After we got the temperatures, we can print them here.
+  // We use the function ByIndex, and as an example get the temperature from the first sensor only.
+  float tempC = sensors.getTempCByIndex(0);
+
+  // Check if reading was successful
+  if (tempC != DEVICE_DISCONNECTED_C)
+  {
+    Serial.print("Temperature for the device 1 (index 0) is: ");
+    Serial.println(tempC);
+    lcd.setCursor(0, 0);
+    lcd.print("Temperature:");
+    lcd.setCursor(0, 1);
+    lcd.print(tempC);
+    lcd.print((char)223);
+    lcd.print("C");
+    lcd.print("  ");
+    lcd.print(DallasTemperature::toFahrenheit(tempC));
+    lcd.print((char)223);
+    lcd.print("F");
+          
+      if (tempC > max_temperature) {
+      //Turn ON fan
+      digitalWrite(3, HIGH);
+      }
+      else if (tempC <= max_temperature) {
+      //Turn off fan
+      digitalWrite(3, LOW); 
+      digitalWrite(4, LOW);  
+      }
+      else if (tempC >= min_temperature) {
+      //Turn off fan
+      digitalWrite(3, LOW);
+      digitalWrite(4, LOW);  
+      }
+      else if (tempC < min_temperature) {
+      //Turn off fan
+      digitalWrite(4, HIGH);  
+      }
+  }
+  else
+  {
+    Serial.println("Error: Could not read temperature data");
+  }
+}
